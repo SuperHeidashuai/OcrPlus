@@ -8,26 +8,21 @@ from app_tasks.util import save_pdf
 from celery_app import app_work
 r = redis.Redis(host="localhost", port=6380, db=2, password="123456")
 
-
 @app_work.task(name="app_tasks.ocr_pdf_task.pdf_to_md",
                bind=True)
 def pdf_to_md(self,data: dict):
     task_id = self.request.id  
-    pdf_file = data.get("pdf_file")
+    pdf_file = data.get("file_path")
     stream_name = data.get("stream_name")
+    task_type = data.get("task_type")
 
-    save_dir = Path("tmp")
-    save_dir.mkdir(parents=True, exist_ok=True)  
-    file_path = save_dir / f"{task_id}.pdf"       
-    save_pdf(pdf_file = pdf_file,file_path=file_path)
-
-    result = asyncio.run(ocr_pdf_to_md(file_path))
-
+    result = asyncio.run(ocr_pdf_to_md(pdf_file))
 
     stream_name = data.get("stream_name")
     result = {
         "task_id": task_id,
-        "result": result
+        "result": result,
+        "task_type":task_type,
     }
     r.xadd(stream_name, 
            {"data": json.dumps(result)},

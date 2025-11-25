@@ -11,18 +11,16 @@ r = redis.Redis(host="localhost", port=6380, db=2, password="123456")
 @app_work.task(name="app_tasks.ocr_pdf_task.pdf_to_md",
                bind=True)
 def pdf_to_md(self,data: dict):
-    task_id = self.request.id  
     pdf_file = data.get("file_path")
     stream_name = data.get("stream_name")
-    task_type = data.get("task_type")
+    body = data.get("body")
 
     result = asyncio.run(ocr_pdf_to_md(pdf_file))
 
     stream_name = data.get("stream_name")
     result = {
-        "task_id": task_id,
         "result": result,
-        "task_type":task_type,
+        "body":body,
     }
     r.xadd(stream_name, 
            {"data": json.dumps(result)},
